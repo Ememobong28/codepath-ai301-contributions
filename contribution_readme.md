@@ -6,13 +6,17 @@
 
 **Issue:** https://github.com/carlos-emr/carlos/issues/2267
 
-**Status:** Phase I — In Progress
+**My Fork:** https://github.com/Ememobong28/carlos
+
+**Status:** Phase I — Complete
 
 ---
 
 ## Why I Chose This Issue
 
-This issue asks me to add two small utility classes (`LogSanitizer` and `UploadedFileUtils`) and to sanitize user-controlled filenames and paths that `EDocUtil.java` currently writes into logs via raw string concatenation, which allows log injection / log forging. It matters because it's a real security fix in a healthcare EMR that handles sensitive patient data, and because the two utility classes are blockers for two other in-progress issues (#2262 and #2263), so completing it unblocks downstream work. I chose it because it's clearly scoped with a fix pattern already present in the codebase (`LogSafe.sanitize` in `BillingOnRaService.java`), while still being challenging enough to teach me secure logging practices and how to navigate a large legacy Java/Struts project.
+This issue asks me to add two small utility classes (`LogSanitizer` and `UploadedFileUtils`) and to sanitize user-controlled filenames and paths that `EDocUtil.java` currently writes into logs via raw string concatenation, which allows log injection / log forging. It matters because it's a real security fix in a healthcare EMR that handles sensitive patient data, and because the two utility classes are blockers for two other in-progress issues ([#2262](https://github.com/carlos-emr/carlos/issues/2262) and [#2263](https://github.com/carlos-emr/carlos/issues/2263)), so completing it unblocks downstream work. I chose it because it's clearly scoped with a fix pattern already present in the codebase (`LogSafe.sanitize` in `BillingOnRaService.java`), while still being challenging enough to teach me secure logging practices and how to navigate a large legacy Java/Struts project.
+
+My relevant background: I'm comfortable with Java and object-oriented patterns, and my learning goal for this contribution is to understand secure logging (log injection/forging defenses) and how a deprecation-shim migration is rolled out incrementally across a large codebase.
 
 ---
 
@@ -24,7 +28,7 @@ This issue asks me to add two small utility classes (`LogSanitizer` and `Uploade
 
 ### Expected Behavior
 
-Filename and path values should be passed through `LogSafe.sanitize()` before being logged, matching the existing safe-logging pattern already used elsewhere in the codebase.
+Filename and path values should be passed through `LogSafe.sanitize()` before being logged, matching the existing safe-logging pattern already used in `BillingOnRaService.java`.
 
 ### Current Behavior
 
@@ -33,11 +37,20 @@ Values are concatenated straight into log strings unsanitized, e.g.:
 
 ### Affected Components
 
-- `src/main/java/io/github/carlos_emr/carlos/documentManager/EDocUtil.java` — lines 1262, 1341, 1352, 1355, 1358
-- New file: `src/main/java/io/github/carlos_emr/carlos/utility/LogSanitizer.java`
-- New file: `src/main/java/io/github/carlos_emr/carlos/utility/UploadedFileUtils.java`
+- `src/main/java/io/github/carlos_emr/carlos/documentManager/EDocUtil.java` — unsanitized logging at lines 1262, 1341, 1352, 1355, 1358 (line numbers confirmed in the issue by the author)
+- New file: `src/main/java/io/github/carlos_emr/carlos/utility/LogSanitizer.java` — deprecated shim delegating to `LogSafe`
+- New file: `src/main/java/io/github/carlos_emr/carlos/utility/UploadedFileUtils.java` — helpers for extracting canonical `File` handles from Struts `UploadedFile` objects
+- Reference implementation to mirror: `src/main/java/io/github/carlos_emr/carlos/.../BillingOnRaService.java` (existing correct `LogSafe.sanitize` usage)
 
-**Out of scope (reserved for other issues):** `NioFileManagerImpl` (#2213) and the `validateFileName` / `PathValidationUtils` call sites (#2262, #2263).
+**Out of scope (reserved for other issues):** `NioFileManagerImpl` ([#2213](https://github.com/carlos-emr/carlos/issues/2213)) and the `validateFileName` / `PathValidationUtils` call sites ([#2262](https://github.com/carlos-emr/carlos/issues/2262), [#2263](https://github.com/carlos-emr/carlos/issues/2263)).
+
+### Acceptance Criteria
+
+- [ ] `LogSanitizer.java` created in `utility/` as a `@Deprecated(forRemoval = true)` shim delegating both `sanitize` overloads to `LogSafe`.
+- [ ] `UploadedFileUtils.java` created in `utility/` with `getUploadedFile` (throws `IllegalStateException` on null / no backing file) and `getUploadedFileOrNull` (returns null).
+- [ ] All five `EDocUtil.java` logging sites (1262, 1341, 1352, 1355, 1358) wrap filename/path variables in `LogSafe.sanitize(...)`.
+- [ ] No changes made to `NioFileManagerImpl` or the `validateFileName` / `PathValidationUtils` call sites.
+- [ ] Project builds and existing tests pass; new unit tests added for both utility classes.
 
 ---
 
@@ -131,5 +144,9 @@ Using UMPIRE framework (adapted):
 
 ## Resources Used
 
-- Issue #2267: https://github.com/carlos-emr/carlos/issues/2267
+- Issue #2267 (this contribution): https://github.com/carlos-emr/carlos/issues/2267
+- Opened by maintainer Ben-Heerema; references PR #2092 (origin of the two utility classes)
+- Blocked-downstream issues: [#2262](https://github.com/carlos-emr/carlos/issues/2262), [#2263](https://github.com/carlos-emr/carlos/issues/2263)
+- Related out-of-scope issue: [#2213](https://github.com/carlos-emr/carlos/issues/2213)
 - CARLOS repo: https://github.com/carlos-emr/carlos
+- CARLOS `CONTRIBUTING.md` / README (Phase II setup reference)
