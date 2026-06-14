@@ -8,7 +8,7 @@
 
 **My Fork:** https://github.com/Ememobong28/carlos
 
-**Status:** Phase I — Complete
+**Status:** Phase II — Complete
 
 ---
 
@@ -58,15 +58,34 @@ Values are concatenated straight into log strings unsanitized, e.g.:
 
 ### Environment Setup
 
-[Phase II]
+CARLOS provides a Docker-based dev container (Java 21, Spring 5, MariaDB), which is the recommended setup. My path:
+
+1. Installed Docker Desktop, VS Code, and the Dev Containers extension.
+2. Cloned my fork and opened it in VS Code; used "Reopen in Container" to build the dev container. First build pulled all Maven dependencies (~15-30 min).
+3. **Memory tuning:** On an 8 GB Mac, the full `make install` was killed during the `checkstyle` phase (the container ran out of memory — `free -h` showed only ~1.4 GB free). Fix: skip checkstyle with the make script's built-in flag, `make install --skip-checks`. Checkstyle is a lint pass and still runs in CI, so skipping it locally is safe.
+4. **Compilation succeeds:** all 4,039 source files compile cleanly with `--skip-checks`, which confirms the environment is sound and let me inspect the affected code directly.
+5. **Known build quirk:** the final `prepare-package` (WAR deploy) step fails on an Ant task looking for `target/classes/carlos.properties`. This is a documented build peculiarity (CONTRIBUTING.md notes the raw packaging is non-trivial) and does not affect reproduction — issue #2267 is a code-level logging vulnerability verifiable in source, not a runtime bug.
+
+Working branch: https://github.com/Ememobong28/carlos/tree/fix-issue-2267
 
 ### Steps to Reproduce
 
-[Phase II]
+This is a code-level security issue (log injection / log forging via unsanitized user-controlled filenames), so reproduction is confirmed by inspecting the source against the safe pattern used elsewhere in the codebase.
+
+1. Build/compile the project in the dev container: `make install --skip-checks`.
+2. Open `src/main/java/io/github/carlos_emr/carlos/documentManager/EDocUtil.java`.
+3. Search the file for `logger.` calls that concatenate a filename/path variable directly into the message string (e.g. `logger.error("... " + fileName, e);`).
+4. **Observed:** seven logging sites concatenate a user-controlled filename straight into the log message without sanitization — at lines **1300, 1316, 1383, 1394, 1397, 1400, 1403**.
+5. Compare against the safe pattern in `BillingOnRaService.java`, which wraps values in `LogSafe.sanitize(...)` and uses `{}` placeholders. The `EDocUtil` sites do not.
+6. **Expected (correct) behavior:** filename/path values should be passed through `LogSafe.sanitize()` before logging, consistent with the project's mandatory security rule "No PHI in logs" and "no string concatenation."
+
+**Note on line numbers:** the original issue cited lines 1262, 1341, 1352, 1355, 1358. On current `develop` the unsanitized logging has shifted and expanded to the seven lines above — the file has changed since the issue was filed.
 
 ### Reproduction Evidence
 
-[Phase II]
+- Working branch: https://github.com/Ememobong28/carlos/tree/fix-issue-2267
+- Affected file/lines: `documentManager/EDocUtil.java` lines 1300, 1316, 1383, 1394, 1397, 1400, 1403 (all concatenate a filename into a log call)
+- Reference (safe) pattern: `BillingOnRaService.java` using `LogSafe.sanitize(...)`
 
 ---
 
@@ -74,15 +93,32 @@ Values are concatenated straight into log strings unsanitized, e.g.:
 
 ### Analysis
 
-[Phase II/III]
+The root cause is that `EDocUtil.java` writes user-controlled filenames into log messages via raw string concatenation, with no sanitization. An attacker who controls a filename could inject newlines or forged log lines (log injection / forging). The codebase already has the correct tool (`LogSafe.sanitize`) and a reference usage (`BillingOnRaService.java`); `EDocUtil` simply wasn't migrated. Separately, two helper classes referenced by downstream issues (#2262, #2263) — `LogSanitizer` and `UploadedFileUtils` — don't yet exist on `develop`.
 
 ### Proposed Solution
 
-[Phase II/III]
+Add the two utility classes specified in the issue, then sanitize every filename/path value logged in `EDocUtil.java` using `LogSafe.sanitize()`, mirroring the existing safe pattern. Keep strictly to the issue's scope.
 
 ### Implementation Plan
 
-Using UMPIRE framework (adapted):
+Using the UMPIRE framework (adapted):
+
+**Understand:** `EDocUtil` logs user-controlled filenames unsanitized at 7 sites, enabling log injection. Filenames should be sanitized via `LogSafe.sanitize()` before logging.
+
+**Match:** `BillingOnRaService.java` already logs safely with `LogSafe.sanitize(...)` and `{}` placeholders — this is the pattern to copy.
+
+**Plan:**
+1. Create `LogSanitizer.java` in `utility/` as a `@Deprecated(forRemoval = true)` shim delegating both `sanitize` overloads to `LogSafe` (per the issue snippet).
+2. Create `UploadedFileUtils.java` in `utility/` with `getUploadedFile` (throws `IllegalStateException` on null / no backing file) and `getUploadedFileOrNull` (returns null).
+3. In `EDocUtil.java`, wrap the filename/path variable in `LogSafe.sanitize(...)` at lines 1300, 1316, 1383, 1394, 1397, 1400, 1403.
+4. Add JUnit 5 unit tests for both new utility classes.
+5. Do **not** modify `NioFileManagerImpl` or the `validateFileName` / `PathValidationUtils` call sites (reserved for #2213 / #2262 / #2263).
+
+**Implement:** [Phase III — commits on https://github.com/Ememobong28/carlos/tree/fix-issue-2267]
+
+**Review:** Self-review against CONTRIBUTING.md — Conventional Commits message format, mandatory DCO sign-off (`git commit -s`), CARLOS copyright header on new files, `io.github.carlos_emr.carlos.*` package namespace, PR targets `develop`.
+
+**Evaluate:** Confirm the project still compiles with `make install --skip-checks`; run the new unit tests (`make install --run-unit-tests`); re-inspect the seven `EDocUtil` sites to verify each now uses `LogSafe.sanitize()`.
 
 **Understand:** [Phase III]
 
@@ -93,12 +129,6 @@ Using UMPIRE framework (adapted):
 2. Create `UploadedFileUtils.java` in `utility/` with `getUploadedFile` and `getUploadedFileOrNull`.
 3. Wrap filename/path variables in `LogSafe.sanitize(...)` at the five named `EDocUtil.java` lines.
 4. Add unit tests for both utility classes.
-
-**Implement:** [Phase III — branch/commit links]
-
-**Review:** [Phase III]
-
-**Evaluate:** [Phase III]
 
 ---
 
