@@ -8,7 +8,7 @@
 
 **My Fork:** https://github.com/Ememobong28/carlos
 
-**Status:** Phase III — Complete
+**Status:** Phase IV — Complete
 
 ---
 
@@ -168,14 +168,32 @@ Manually verified all unsanitized `logger.*` calls in `EDocUtil.java` now use `L
 ## Pull Request
 
 **PR Link:** https://github.com/carlos-emr/carlos/pull/2975
-**Status:** Awaiting review from @yingbull (code owner)
-**Maintainer Feedback:** [Awaiting]
+
+**PR Description:**
+Adds `LogSanitizer.java` (deprecated transitional shim over `LogSafe`) and `UploadedFileUtils.java` (helpers for extracting validated `File` handles from Struts `UploadedFile` objects via `PathValidationUtils.validateUploadContent()`). Removes unsanitized filename logging from `EDocUtil.java` — filenames are omitted entirely from log messages to prevent PHI leakage, per maintainer guidance.
+
+**Status:** Iterating — awaiting second review from @yingbull after addressing all bot and maintainer feedback
+
+**Maintainer Feedback:**
+
+- **Jun 21 (Gemini bot):** Flagged wrong exception type (`IllegalStateException` → `IllegalArgumentException`), missing Javadoc on `LogSanitizer` methods, and "canonical" misnomer in `UploadedFileUtils` class Javadoc. All addressed before notifying human maintainer.
+
+- **Jun 25 (Ben-Heerema):** Asked to review and address remaining CI bot comments. Confirmed to address PHI leakage in this PR but limit it to EDocUtil log sites already touched — omit filenames entirely rather than logging sanitized values.
+
+- **Jun 25 (Copilot/CodeRabbit):** Multiple comments addressed:
+  - Removed filename values from EDocUtil log messages entirely to prevent PHI leakage
+  - Removed unused `LogSafe` import from `EDocUtil.java`
+  - Delegated `UploadedFileUtils` to `PathValidationUtils.validateUploadContent()` for proper temp file validation
+  - Updated Javadoc ("backing" not "canonical", added validation contract note)
+  - Fixed `@since` tags to full date format (2026-06-21)
+  - Removed duplicate copyright line from test file headers
+  - Updated unit tests to use real temp files and expect `SecurityException` where appropriate
 
 ---
 
 ## Learnings & Reflections
 
-[Phase IV]
+[Phase IV — to be completed after merge/close]
 
 ---
 
