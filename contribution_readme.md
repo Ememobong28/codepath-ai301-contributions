@@ -211,3 +211,138 @@ Adds `LogSanitizer.java` (deprecated transitional shim over `LogSafe`) and `Uplo
 - CARLOS `CONTRIBUTING.md` / README (Phase II setup reference)
 - `AddEditDocument2Action.java` — confirmed `UploadedFile.getContent()` API
 - `BillingOnRaService.java` — reference safe logging pattern
+
+
+
+
+
+---
+
+# Contribution 2: Simplify overcomplicated solution for SAPO 2014 - Stables of Genghis Khan
+
+**Contribution Number:** 2
+
+**Student:** Immanuella Emem Umoren
+
+**Issue:** https://github.com/cpinitiative/usaco-guide/issues/5604
+
+**My Fork:** https://github.com/Ememobong28/usaco-guide
+
+**Status:** Phase I — In Progress
+
+---
+
+## Why I Chose This Issue
+
+This issue asks me to replace the existing, needlessly complicated solution code for a USACO problem (SAPO 2014 - The Stables of Genghis Khan) with a simpler, cleaner interval DP approach already provided by a maintainer in the issue comments. It matters because unclear solution code makes it harder for competitive programming students using the guide to learn the underlying algorithm, and a correct simplification directly improves the educational resource. I chose it as my second contribution because it's a deliberate change of pace from my first (a Java/security fix in a large legacy EMR): this is a contained, well-scoped content/algorithm task in a JavaScript/TypeScript/MDX codebase, with the maintainer already having supplied working replacement code — reducing risk while letting me practice porting and verifying algorithmic solutions (interval DP) rather than security patterns.
+
+My relevant background: I'm comfortable with algorithmic problem solving and DP concepts from competitive programming exposure; my learning goal here is contributing to a content-heavy, non-Java codebase and practicing careful verification of algorithm correctness against a judge.
+
+---
+
+## Understanding the Issue
+
+### Problem Description
+
+The existing solution page for "SAPO 2014 - The Stables of Genghis Khan" contains solution code that is overcomplicated — it introduces extra cases that aren't necessary. A simpler, correct interval DP solution (by contributor Andi Qu, shared by maintainer @bqi343) solves the same problem more directly.
+
+### Expected Behavior
+
+The solution page should present the simpler DP solution: `dp[i][j]` = minimum cost to construct a BST using `a[i..j]`, transitioning over split point `k`, in O(K³).
+
+### Current Behavior
+
+The published solution uses a more complex approach with unnecessary additional cases.
+
+### Affected Components
+
+- The MDX solution content file for this problem (exact path TBD — likely under `solutions/` or `content/` in the usaco-guide repo structure)
+- Possibly multiple language variants (C++/Java/Python) if the site displays multi-language solutions
+
+### Acceptance Criteria
+
+- [ ] Locate the current solution file/content for this problem.
+- [ ] Confirm which language(s) the site's solution currently provides.
+- [ ] Replace the existing code with the simpler DP approach, translated to each required language.
+- [ ] Verify the replacement solution is correct (passes the judge / matches expected outputs).
+- [ ] No unrelated content changes to the page.
+
+---
+
+## Reproduction Process
+
+### Environment Setup
+
+[Phase II]
+
+### Steps to Reproduce
+
+[Phase II]
+
+### Reproduction Evidence
+
+[Phase II]
+
+---
+
+## Solution Approach
+
+### Analysis
+
+[Phase II/III]
+
+### Proposed Solution
+
+Replace the current solution code with the DP approach already validated by the maintainer's comment.
+
+### Implementation Plan
+
+**Understand:** The current solution overcomplicates the DP; a simpler O(K³) interval DP already exists and is confirmed correct by a maintainer.
+
+**Match:** Compare against other interval-DP solutions already published elsewhere on the site for consistent style/formatting.
+
+**Plan:**
+1. Find the exact content file for this problem's solution.
+2. Confirm required language(s).
+3. Port/insert the simpler DP code, matching site conventions (comments, complexity note, variable naming).
+4. Test the replacement against the judge or sample cases.
+5. Submit PR referencing this issue.
+
+**Implement:** [Phase III]
+
+**Review:** [Phase III]
+
+**Evaluate:** [Phase III]
+
+---
+
+## Testing Strategy
+
+### Unit Tests
+
+N/A — content/solution change, verified via judge submission rather than unit tests.
+
+### Manual Testing
+
+Will verify the replacement solution against the problem's test cases / online judge before submitting.
+
+---
+
+## Pull Request
+
+**PR Link:** [Phase IV]
+**Status:** [Phase IV]
+
+---
+
+## Learnings & Reflections
+
+[Phase IV]
+
+---
+
+## Resources Used
+
+- Issue #5604: https://github.com/cpinitiative/usaco-guide/issues/5604
+- Maintainer-provided reference solution (Andi Qu, via @bqi343's comment)
+- USACO Guide repo: https://github.com/cpinitiative/usaco-guide
